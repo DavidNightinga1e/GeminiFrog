@@ -10,7 +10,7 @@ BOT_TOKEN = os.getenv('BOT_TOKEN')
 API_KEY = os.getenv('API_KEY')
 PASS = os.getenv('PASS')
 
-bot = telebot.TeleBot(BOT_TOKEN)
+bot = telebot.TeleBot(BOT_TOKEN, parse_mode='MARKDOWN')
 genai.configure(api_key=API_KEY)
 model = genai.GenerativeModel("gemini-1.5-flash")
 whitelisted = set()
