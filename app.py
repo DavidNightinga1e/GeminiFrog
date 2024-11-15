@@ -1,13 +1,15 @@
 import telebot
 import google.generativeai as genai
+import os
+import re
 from google.generativeai.types import HarmCategory, HarmBlockThreshold
 from dotenv import load_dotenv
-import os
 
-load_dotenv()
 
 IS_DEV = True
 IS_DEV = False # <--- comment that string for dev mode, do not commit
+
+load_dotenv()
 
 BOT_TOKEN = os.getenv('BOT_TOKEN_DEV' if IS_DEV else 'BOT_TOKEN')
 API_KEY = os.getenv('API_KEY')
@@ -29,18 +31,18 @@ safety={
 
 @bot.message_handler(commands=['start', 'hello'])
 def command_start_handler(message):
-    bot.reply_to(message, 'Среда?\n/auth для входа')
+    bot.reply_to(message, localization['Welcome'])
 
 
 @bot.message_handler(commands=['auth'])
 def command_auth_handler(message):
     uid = message.from_user.id
     if authorized.__contains__(uid):
-        bot.reply_to(message, 'Уже квакаем, все ок!')
+        bot.reply_to(message, localization['Auth_Already'])
     elif waiting_for_pass.__contains__(uid):
-        bot.reply_to(message, 'Квакни пароль')
+        bot.reply_to(message, localization['Auth_PasswordRequest'])
     else:
-        bot.reply_to(message, 'Квакни пароль')
+        bot.reply_to(message, localization['Auth_PasswordRequest'])
         waiting_for_pass.add(uid)
 
 
@@ -48,10 +50,10 @@ def command_auth_handler(message):
 def command_reset_chat_handler(message):
     uid = message.from_user.id
     if not chats.__contains__(uid):
-        bot.reply_to(message, 'А мы и так не квакали')
+        bot.reply_to(message, localization['Context_Empty'])
     else:
         chats.pop(uid)
-        bot.reply_to(message, 'Готово, больше не квакаем')
+        bot.reply_to(message, localization['Context_Reset'])
 
 
 @bot.message_handler(func=lambda msg: True)
@@ -61,20 +63,20 @@ def message_receive_handler(message):
         if message.text == PASS:
             authorized.add(uid)
             waiting_for_pass.remove(uid)
-            bot.reply_to(message, 'Среда чюваки!')
+            bot.reply_to(message, localization['Auth_Success'])
         else:
-            bot.reply_to(message, 'Не среда, пароль неверный(')
+            bot.reply_to(message, localization['Auth_WrongPassword'])
         return
 
     if not authorized.__contains__(uid):
-        bot.reply_to(message, 'Не среда.\n/auth для входа')
+        bot.reply_to(message, localization['Auth_NotAuthed'])
         return
 
     try:
         if not chats.__contains__(uid):
             chats[uid] = model.start_chat()
         c = chats[uid]
-        res_message = bot.reply_to(message, 'Ща...')
+        res_message = bot.reply_to(message, localization['Gemini_Wait'])
         res_text = ''
         response = c.send_message(message.text, safety_settings=safety, stream=True)
         for chunk in response:
@@ -82,8 +84,21 @@ def message_receive_handler(message):
             res_message = bot.edit_message_text(res_text, chat_id=res_message.chat.id, message_id=res_message.message_id)
 
     except Exception as e:
-        bot.reply_to(message, 'Все квакнулось\n' + repr(e))
+        bot.reply_to(message, localization['Gemini_Fail'] + '\n' + repr(e))
 
 
+def load_localization():
+    result_dict = {}
+    with open('localization.txt', 'r', encoding='UTF-8') as f:
+        file_content = f.read()
+        pattern = r"'(.*?)'='(.*?)'"
+        matches = re.findall(pattern, file_content)
+        for key, value in matches:
+            result_dict[key] = value.replace('\\n', '\n')
+    return result_dict
+
+
+print('reading localization file')
+localization = load_localization()
 print('croak, starting polling...')
 bot.infinity_polling()
