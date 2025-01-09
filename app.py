@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 
 IS_DEV = True
-# IS_DEV = False # <--- comment that string for dev mode, do not commit
+IS_DEV = False # <--- comment that string for dev mode, do not commit
 
 load_dotenv()
 
