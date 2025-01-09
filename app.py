@@ -7,17 +7,18 @@ from dotenv import load_dotenv
 
 
 IS_DEV = True
-IS_DEV = False # <--- comment that string for dev mode, do not commit
+# IS_DEV = False # <--- comment that string for dev mode, do not commit
 
 load_dotenv()
 
 BOT_TOKEN = os.getenv('BOT_TOKEN_DEV' if IS_DEV else 'BOT_TOKEN')
 API_KEY = os.getenv('API_KEY')
 PASS = os.getenv('PASS')
+MODEL = os.getenv('MODEL')
 
 bot = telebot.TeleBot(BOT_TOKEN)
 genai.configure(api_key=API_KEY)
-model = genai.GenerativeModel("gemini-1.5-flash")
+model = genai.GenerativeModel(MODEL)
 authorized = set()
 waiting_for_pass = set()
 chats = dict()
